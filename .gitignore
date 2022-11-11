@@ -1,3 +1,7 @@
+# Ignore pdfs
+*.pdf
+*.epub
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
