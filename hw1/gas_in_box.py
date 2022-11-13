@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib import pyplot as plt
 from random import randrange
+from tqdm import trange
 from typing import Callable, NewType, Tuple
 from sys import argv
 
@@ -68,7 +69,6 @@ def lennard_jones_force(particles: VectorArray) -> VectorArray:
     forces = np.zeros_like(particles)
 
     for i in range(length):
-        # "Triangular" iteration avoids calculating force on self and duplicate calculations
         for j in range(i + 1, length):
             r = np.sqrt(np.sum((particles[i,:] - particles[j,:])**2))
             magnitude = 4 * epsilon * ( 12*np.power(sigma,12)*np.power(r, -13) - 6*np.power(sigma,6)*np.power(r,-7) )
@@ -85,22 +85,22 @@ def lennard_jones_potential(particles: VectorArray) -> npt.NDArray[float]:
 
     for i in range(length):
         for j in range(i+1, length):
-            r = sum((particles[i,:] - particles[j,:]) ** 2)
+            r = np.sum((particles[i,:] - particles[j,:]) ** 2)
             mag = 4 * epsilon * (np.power(sigma ** 2 / r, 6) - np.power(sigma**2/r, 3))
             potential[i] += mag
             potential[j] += mag
     return potential
 
 def constrain_particles(particles: VectorArray) -> None:
-    for pos in particles:
-        if pos[0] > L:
-            pos[0] = 2 * L - pos[0]
-        elif pos[0] < 0:
-            pos[0] *= -1
-        if pos[1] > L:
-            pos[1] = 2 * L - pos[1]
-        elif pos[1] < 0:
-            pos[1] *= -1
+    for i in range(len(particles)):
+        if particles[i,0] > L:
+            particles[i,0] = 2 * L - particles[i,0]
+        elif particles[i,0] < 0:
+            particles[i,0] *= -1
+        if particles[i,1] > L:
+            particles[i,1] = 2 * L - particles[i,1]
+        elif particles[i,1] < 0:
+            particles[i,1] *= -1
 
 def kinetic_energy(velocities: VectorArray, scale: float):
     return 0.5 * m * np.sum((velocities/scale) ** 2)
@@ -113,7 +113,7 @@ def main():
     velocity_scale = 2 * v_0
     velocities = initialize_velocities(N, velocity_scale)
 
-    time_range = 50 # Redo with 50 000
+    time_range = 50000 
     plot_freq = 5
     dt = sigma/(velocity_scale) * 0.02
     
@@ -125,11 +125,11 @@ def main():
     plotting = ENERGIES
     logging = False
 
-    for t in range(time_range):
+    for t in trange(time_range):
         if logging or plotting == SNAPSHOT:
             position_history[t//plot_freq,:,:] = particles
         if t % plot_freq == 0 and plotting == ENERGIES:
-            print(f'{t//plot_freq} of {time_range//plot_freq}')
+            # print(f'{t//plot_freq} of {time_range//plot_freq}')
             # Something is wrong with the units. Graphs have the correct shape but are not of the same scale
             E_k_history[t//plot_freq] = kinetic_energy(velocities, velocity_scale)
             E_p_history[t//plot_freq] = potential_energy(particles)
