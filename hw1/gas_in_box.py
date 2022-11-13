@@ -6,7 +6,7 @@ import numpy.typing as npt
 from scipy.constants import k
 from matplotlib import pyplot as plt
 from random import randrange
-from typing import NewType
+from typing import Callable, NewType, Tuple
 # from sympy import symbols
 
 Vector = NewType('Vector', npt.NDArray[float])
@@ -29,12 +29,17 @@ v_0 = math.sqrt(2 * epsilon / m_0)
 t_0 = sigma_0 * math.sqrt(m_0 / (2 * epsilon))
 
 def dist_between_points(x1: Vector, x2: Vector) -> float:
-    if x1.size != x2.size:
+    if x1.shape != x2.shape:
         raise AssertionError('Error: Different dimensions of vectors given to dist_between_points()')
     return math.sqrt(sum((x1[i] - x2[i]) ** 2 for i in range(len(x1))))
 
-def angle_between_points(x1: Vector, x2: Vector):
-    x1[1]
+def leapfrog(pos: VectorArray, vel: VectorArray, acc_func: Callable[[VectorArray], VectorArray], dt = 1.0) -> Tuple[VectorArray, VectorArray]:
+    pos_half = pos + vel * dt/2
+    acc_half = acc_func(pos_half)
+
+    vel_next = vel + acc_half * dt
+    pos_next = pos_half + vel_next * dt/2
+    return (pos_next, vel_next)
 
 def new_particle_too_close(P: Vector, x: Vector, min_dist: float) -> bool:
     return min([dist_between_points(P[i], x) for i in range(len(P))]) < min_dist
@@ -82,29 +87,7 @@ def lennard_jones_potential(positions: VectorArray) -> npt.NDArray[float]:
             potential[i] += mag
             potential[j] += mag
 
-# Void fn, updates internal values
-def update_velocities(particles: VectorArray, velocities: VectorArray) -> None:
-    length = len(particles)
-    s6 = sigma ** 6
-    F = np.zeros_like(particles)
-    angles = np.zeros_like(particles)
-    for i in range(length):
-        for j in range(i + 1, length): # since it's symmetric
-            rij = dist_between_points(particles[i], particles[j])
-            # angles = 
-            F[j,i] = F[i,j] = 6 * s6 * (rij ** 6 - s6) / rij ** 13
-            
-    # velocities = 
-
 def constrain_particles(particles: VectorArray) -> None:
-    pass
-
-# Void fn, updates internal values
-def update_particles(particles: VectorArray, velocities: VectorArray) -> None:
-    intermediary = [pos + velocities[idx]*dt/2 for idx, pos in enumerate(particles)]
-    update_velocities(particles, velocities)
-    for i in range(len(particles)):
-        particles[i] = intermediary[i] + velocities[i]*dt/2
     for pos in particles:
         if pos[0] > L:
             pos[0] = 2 * L - pos[0]
@@ -118,8 +101,8 @@ def update_particles(particles: VectorArray, velocities: VectorArray) -> None:
 def kinetic_energy(velocities: VectorArray, scale: float):
     return 0.5 * m * sum((velocities/scale) ** 2)
 
-def potential_energy(positions: VectorArray, epsilon: float, sigma: float) -> float:
-    pass
+def potential_energy(positions: VectorArray) -> float:
+    return sum(lennard_jones_potential(positions))
 
 def main():
     particles = initialize_particles(N, L)
@@ -137,8 +120,28 @@ def main():
     plotting = ENERGIES
     logging = False
 
-    update_particles(particles, velocities)
+    for t in range(time_range):
+        if logging or plotting == SNAPSHOT:
+            position_history[t//plot_freq,:,:] = particles
 
+        particles, velocities = leapfrog(particles, velocities, lambda x: lennard_jones_force(x), dt = dt)
+        constrain_particles(particles)
+
+    if plotting == SNAPSHOT:
+        for i in range(N):
+            plt.plot(position_history[:,i,0].squeeze(), position_history[:,i,1].squeeze())
+        plt.gca().set_xlim([0, L])
+        plt.gca().set_ylim([0, L])
+    elif plotting == ENERGIES:
+        plt.subplot(3, 1, 1)
+        plt.plot(np.arange(time_steps//plot_freq) * dt / time_scale, E_k_history / epsilon, '', label="Kinetic Energy", markersize=1)
+        plt.ylabel("$E_k$")
+        plt.subplot(3, 1, 2)
+        plt.plot(np.arange(time_steps//plot_freq) * dt / time_scale, E_p_history / epsilon, '', label="Potential Energy", markersize=1)
+        plt.ylabel("$E_p$")
+        plt.subplot(3, 1, 3)
+        plt.plot(np.arange(time_steps//plot_freq) * dt / time_scale, (E_k_history + E_p_history / epsilon), '', label="Potential Energy", markersize=1)
+        plt.ylabel("$E$")
 
 if __name__ == 'main':
     sigma_0 = 1
