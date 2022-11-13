@@ -18,7 +18,6 @@ m_0 = 0.1
 epsilon_0 = 1
 v_0 = 1
 dt = 1
-van_der_waals = True
 
 dim = 2
 N = 100
@@ -49,11 +48,11 @@ def initialize_particles(N: int, L: float) -> VectorArray:
         x = np.vstack([x, new_point])
     return x
 
-def initialize_velocities(N: int, magnitude: float) -> VectorArray:
+def initialize_velocities(N: int, scale: float) -> VectorArray:
     v = np.empty((0,2), float)
     for i in range(N):
         theta = 2 * math.pi * np.random.random()
-        v = np.vstack([v, [magnitude * math.cos(theta), magnitude * math.sin(theta)]])
+        v = np.vstack([v, [scale * math.cos(theta), scale * math.sin(theta)]])
     return v
 
 def lennard_jones_force(positions: VectorArray) -> VectorArray:
@@ -73,13 +72,15 @@ def lennard_jones_force(positions: VectorArray) -> VectorArray:
     return forces
 
 def lennard_jones_potential(positions: VectorArray) -> npt.NDArray[float]:
-    assert False, 'Not finished'
     length = positions.shape[0]
     potential = np.zeros(length)
 
     for i in range(length):
         for j in range(i+1, length):
             r = sum((positions[i,:] - positions[j,:]) ** 2)
+            mag = 4 * epsilon * (np.power(sigma ** 2 / r, 6) - np.power(sigma**2/r, 3))
+            potential[i] += mag
+            potential[j] += mag
 
 # Void fn, updates internal values
 def update_velocities(particles: VectorArray, velocities: VectorArray) -> None:
@@ -87,8 +88,6 @@ def update_velocities(particles: VectorArray, velocities: VectorArray) -> None:
     s6 = sigma ** 6
     F = np.zeros_like(particles)
     angles = np.zeros_like(particles)
-    if not van_der_waals:
-        return
     for i in range(length):
         for j in range(i + 1, length): # since it's symmetric
             rij = dist_between_points(particles[i], particles[j])
@@ -108,16 +107,16 @@ def update_particles(particles: VectorArray, velocities: VectorArray) -> None:
         particles[i] = intermediary[i] + velocities[i]*dt/2
     for pos in particles:
         if pos[0] > L:
-            pos[0] -= L
+            pos[0] = 2 * L - pos[0]
         elif pos[0] < 0:
             pos[0] *= -1
         if pos[1] > L:
-            pos[1] -= L
+            pos[1] = 2 * L - pos[1]
         elif pos[1] < 0:
             pos[1] *= -1
 
-def kinetic_energy(velocities: VectorArray, magnitude: float):
-    return 0.5 * m * sum((velocities/magnitude) ** 2)
+def kinetic_energy(velocities: VectorArray, scale: float):
+    return 0.5 * m * sum((velocities/scale) ** 2)
 
 def potential_energy(positions: VectorArray, epsilon: float, sigma: float) -> float:
     pass
@@ -125,7 +124,36 @@ def potential_energy(positions: VectorArray, epsilon: float, sigma: float) -> fl
 def main():
     particles = initialize_particles(N, L)
     velocities = initialize_velocities(N, 2 * v_0)
+
+    time_range = 50000
+    plot_freq = 5
+    dt = sigma/(2 * v_0) * 0.02
+    
+    position_history = np.empty((time_steps//plot_freq,N,2))
+
+    E_k_history = np.empty(time_steps//plot_freq)
+    E_p_history = np.empty(time_steps//plot_freq)
+
+    plotting = ENERGIES
+    logging = False
+
     update_particles(particles, velocities)
 
 
-main()
+if __name__ == 'main':
+    sigma_0 = 1
+    m_0 = 0.1
+    epsilon_0 = 1
+    v_0 = 1
+    dt = 1
+
+    dim = 2
+    N = 100
+    m = m_0
+    epsilon = epsilon_0
+    sigma = sigma_0
+    L = 100 * sigma_0
+    v_0 = math.sqrt(2 * epsilon / m_0)
+    t_0 = sigma_0 * math.sqrt(m_0 / (2 * epsilon))
+
+    main()
