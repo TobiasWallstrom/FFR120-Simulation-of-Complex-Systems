@@ -11,15 +11,10 @@ from sys import argv
 Vector = NewType('Vector', npt.NDArray[float])
 VectorArray = NewType('VectorArray', npt.NDArray[Vector])
 
-SNAPSHOT = 0
-ENERGIES = 1
-plotting = ENERGIES
-logging = False
-
 # m_0, epsilon_0, sigma_0 = symbols('m_0 epsilon_0 sigma_0')
-sigma_0 = 1
+sigma_0 = 1.0
 m_0 = 0.1
-epsilon_0 = 1
+epsilon_0 = 1.0
 v_0 = 1
 dt = 1
 
@@ -37,9 +32,9 @@ def dist_between_points(x1: Vector, x2: Vector) -> float:
         raise AssertionError('Error: Different dimensions of vectors given to dist_between_points()')
     return np.sqrt(sum((x1[i] - x2[i]) ** 2 for i in range(len(x1))))
 
-def leapfrog(pos: VectorArray, vel: VectorArray, acc_func: Callable[[VectorArray], VectorArray], dt = 1.0) -> Tuple[VectorArray, VectorArray]:
+def leapfrog(pos: VectorArray, vel: VectorArray, fn: Callable[[VectorArray], VectorArray], dt = 1.0) -> Tuple[VectorArray, VectorArray]:
     pos_half = pos + vel * dt/2
-    acc_half = acc_func(pos_half)
+    acc_half = fn(pos_half)
 
     vel_next = vel + acc_half * dt
     pos_next = pos_half + vel_next * dt/2
@@ -72,11 +67,10 @@ def lennard_jones_force(particles: VectorArray) -> VectorArray:
         for j in range(i + 1, length):
             r = np.sqrt(np.sum((particles[i,:] - particles[j,:])**2))
             magnitude = 4 * epsilon * ( 12*np.power(sigma,12)*np.power(r, -13) - 6*np.power(sigma,6)*np.power(r,-7) )
-            # Direction of force exerted on i (towards j)
-            direction = (particles[j,:] - particles[i,:]) / r
+            angle = (particles[j,:] - particles[i,:]) / r
 
-            forces[i,:] -= magnitude*direction
-            forces[j,:] += magnitude*direction
+            forces[i,:] -= magnitude * angle
+            forces[j,:] += magnitude * angle
     return forces
 
 def lennard_jones_potential(particles: VectorArray) -> npt.NDArray[float]:
@@ -102,18 +96,18 @@ def constrain_particles(particles: VectorArray) -> None:
         elif particles[i,1] < 0:
             particles[i,1] *= -1
 
-def kinetic_energy(velocities: VectorArray, scale: float):
-    return 0.5 * m * np.sum((velocities/scale) ** 2)
+def kinetic_energy(velocities: VectorArray):
+    return 0.5 * np.sum(velocities ** 2)
 
 def potential_energy(particles: VectorArray) -> float:
-    return np.sum(lennard_jones_potential(particles))
+    return np.sum(lennard_jones_potential(particles/sigma))
 
 def main():
     particles = initialize_particles(N, L)
     velocity_scale = 2 * v_0
     velocities = initialize_velocities(N, velocity_scale)
 
-    time_range = 50000 
+    time_range = 5000 
     plot_freq = 5
     dt = sigma/(velocity_scale) * 0.02
     
@@ -122,49 +116,28 @@ def main():
     E_k_history = np.empty(time_range//plot_freq)
     E_p_history = np.empty(time_range//plot_freq)
 
-    plotting = ENERGIES
-    logging = False
-
     for t in trange(time_range):
-        if logging or plotting == SNAPSHOT:
-            position_history[t//plot_freq,:,:] = particles
-        if t % plot_freq == 0 and plotting == ENERGIES:
-            # print(f'{t//plot_freq} of {time_range//plot_freq}')
-            # Something is wrong with the units. Graphs have the correct shape but are not of the same scale
-            E_k_history[t//plot_freq] = kinetic_energy(velocities, velocity_scale)
+        if t % plot_freq == 0:
+            E_k_history[t//plot_freq] = kinetic_energy(velocities)
             E_p_history[t//plot_freq] = potential_energy(particles)
 
         particles, velocities = leapfrog(particles, velocities, lambda x: lennard_jones_force(x), dt = dt)
         constrain_particles(particles)
     
     time = np.arange(time_range//plot_freq) * dt / t_0
-    # plot_vals(plotting, time, E_k_history, E_p_history)
-    if plotting == SNAPSHOT:
-        for i in range(N):
-            plt.plot(position_history[:,i,0].squeeze(), position_history[:,i,1].squeeze())
-        plt.gca().set_xlim([0, L])
-        plt.gca().set_ylim([0, L])
-    elif plotting == ENERGIES:
-        plt.subplot(3, 1, 1)
-        plt.plot(time, E_k_history / epsilon, '', label="Kinetic Energy", markersize=1)
-        plt.ylabel("$E_k$")
-        plt.subplot(3, 1, 2)
-        plt.plot(time, E_p_history / epsilon, '', label="Potential Energy", markersize=1)
-        plt.ylabel("$E_p$")
-        plt.subplot(3, 1, 3)
-        plt.plot(time, (E_k_history + E_p_history) / epsilon, '', label="Total Energy", markersize=1)
-        plt.ylabel("$E$")
+    plt.subplot(3, 1, 1)
+    plt.plot(time, E_k_history / epsilon, '', label="Kinetic Energy", markersize=1)
+    plt.ylabel("$E_k$")
+    plt.subplot(3, 1, 2)
+    plt.plot(time, E_p_history / epsilon, '', label="Potential Energy", markersize=1)
+    plt.ylabel("$E_p$")
+    plt.subplot(3, 1, 3)
+    plt.plot(time, (E_k_history + E_p_history) / epsilon, '', label="Total Energy", markersize=1)
+    plt.ylabel("$E_{tot}$")
     np.save('time.npy', time)
     np.save('particles.npy', position_history)
     np.save('E_k.npy', E_k_history)
     np.save('E_p.npy', E_p_history)
-
-    if logging:
-        try:
-            os.mkdir("./logs")
-        except FileExistsError:
-            pass
-        np.savetxt("./logs/" + datetime.now().strftime("%d-%m-%Y-%H:%M:%S") + ".txt", position_history.reshape(position_history.shape[0],N*2))
 
     plt.show()
 
