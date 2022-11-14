@@ -36,9 +36,9 @@ def leapfrog(pos: VectorArray, vel: VectorArray, fn: Callable[[VectorArray], Vec
     pos_half = pos + vel * dt/2
     acc_half = fn(pos_half)
 
-    vel_next = vel + acc_half * dt
-    pos_next = pos_half + vel_next * dt/2
-    return (pos_next, vel_next)
+    vel += acc_half * dt
+    pos = pos_half + vel * dt/2
+    return (pos, vel)
 
 def new_particle_too_close(P: Vector, x: Vector, min_dist: float) -> bool:
     return min([dist_between_points(P[i], x) for i in range(len(P))]) < min_dist
@@ -107,62 +107,48 @@ def main():
     velocity_scale = 2 * v_0
     velocities = initialize_velocities(N, velocity_scale)
 
-    time_range = 5000 
+    time_range = 50000
     plot_freq = 5
     dt = sigma/(velocity_scale) * 0.02
     
     position_history = np.empty((time_range//plot_freq,N,2))
 
-    E_k_history = np.empty(time_range//plot_freq)
-    E_p_history = np.empty(time_range//plot_freq)
+    E_k = np.empty(time_range//plot_freq)
+    E_p = np.empty(time_range//plot_freq)
 
     for t in trange(time_range):
         if t % plot_freq == 0:
-            E_k_history[t//plot_freq] = kinetic_energy(velocities)
-            E_p_history[t//plot_freq] = potential_energy(particles)
+            E_k[t//plot_freq] = kinetic_energy(velocities)
+            E_p[t//plot_freq] = potential_energy(particles)
 
         particles, velocities = leapfrog(particles, velocities, lambda x: lennard_jones_force(x), dt = dt)
         constrain_particles(particles)
     
     time = np.arange(time_range//plot_freq) * dt / t_0
     plt.subplot(3, 1, 1)
-    plt.plot(time, E_k_history / epsilon, '', label="Kinetic Energy", markersize=1)
-    plt.ylabel("$E_k$")
+    plt.plot(time * plot_freq, E_k / epsilon, '', markersize=1)
+    plt.ylabel('Kinetic energy')
     plt.subplot(3, 1, 2)
-    plt.plot(time, E_p_history / epsilon, '', label="Potential Energy", markersize=1)
-    plt.ylabel("$E_p$")
+    plt.plot(time * plot_freq, E_p / epsilon, '', markersize=1)
+    plt.ylabel('Potential energy')
     plt.subplot(3, 1, 3)
-    plt.plot(time, (E_k_history + E_p_history) / epsilon, '', label="Total Energy", markersize=1)
-    plt.ylabel("$E_{tot}$")
-    np.save('time.npy', time)
-    np.save('particles.npy', position_history)
-    np.save('E_k.npy', E_k_history)
-    np.save('E_p.npy', E_p_history)
+    plt.plot(time * plot_freq, (E_k + E_p) / epsilon, '', markersize=1)
+    plt.ylabel('Total energy')
 
     plt.show()
 
-def plot_energies(time:Vector, E_k: Vector, E_p: Vector, pos_hist: Vector = None):
+def plot_energies(time:Vector, E_k: Vector, E_p: Vector):
     plt.subplot(3, 1, 1)
-    plt.plot(time, E_k/ epsilon, '', label="Kinetic Energy", markersize=1)
-    plt.ylabel("$E_k$")
+    plt.plot(time, E_k/ epsilon, markersize=1)
+    plt.ylabel('Kinetic energy')
     plt.subplot(3, 1, 2)
-    plt.plot(time, E_p / epsilon, '', label="Potential Energy", markersize=1)
-    plt.ylabel("$E_p$")
+    plt.plot(time, E_p / epsilon, markersize=1)
+    plt.ylabel('Potential energy')
     plt.subplot(3, 1, 3)
-    plt.plot(time, (E_k + E_p)/ epsilon, '', label="Potential Energy", markersize=1)
-    plt.ylabel("$E$")
+    plt.plot(time, (E_k + E_p)/ epsilon, markersize=1)
+    plt.ylabel('Total energy')
     
     plt.show()
-
-def plot_old_values():
-    time = np.load('time.npy')
-    particle_hist = np.load('particles.npy')
-    E_k = np.load('E_k.npy')
-    E_p = np.load('E_p.npy')
-
-    print(time)
-    print(E_k)
-    plot_energies(ENERGIES, time, E_k, E_p)
 
 if __name__ == '__main__':
     sigma_0 = 1
@@ -180,7 +166,4 @@ if __name__ == '__main__':
     v_0 = np.sqrt(2 * epsilon / m_0)
     t_0 = sigma_0 * np.sqrt(m_0 / (2 * epsilon))
 
-    if len(argv) > 1 and 'plot' in argv:
-        plot_old_values()
-    else:
-        main()
+    main()
