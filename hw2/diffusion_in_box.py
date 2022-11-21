@@ -24,7 +24,7 @@ if __name__ == '__main__':
     LWR_BND = -L/2
     UPR_BND = L/2
     
-    plot_times = np.array([10, 100, 1_000, 10_000, 100_000])
+    plot_times = np.array([10, 100, 1_000, 10_000, 100_000])/dt
 
     for t in trange(time_range):
         diff = (np.round(np.random.rand(N,1)) * 2 - 1) * sigma * dt_red
@@ -33,9 +33,9 @@ if __name__ == '__main__':
         x[(x < -L / 2)] = - L - x[(x < -L / 2)]
         x[(x > L / 2)] = L - x[(x > L / 2)]
 
-        if t+1 in (plot_times/dt).astype(int):
+        if t+1 in plot_times:
             counts, bins = np.histogram(x[:], bins=BINS, range=(LWR_BND,UPR_BND))
-            print(f't={t+1}')
+            print(f't={t}')
             print(f'  Avg:{np.mean(x[:])} Std:{np.std(x[:]) / L}')
             plt.stairs(counts,bins, fill=True, alpha=0.2, color='#590995', label=f'$t={t+1}$')
             plt.stairs(counts,bins, color='#590995')
