@@ -3,10 +3,8 @@
 import numpy as np
 import numpy.typing as npt
 from matplotlib import pyplot as plt
-from random import randrange
 from tqdm import trange
 from typing import Callable, NewType, Tuple
-from sys import argv
 
 Vector = NewType('Vector', npt.NDArray[float])
 VectorArray = NewType('VectorArray', npt.NDArray[Vector])
@@ -85,17 +83,6 @@ def lennard_jones_potential(particles: VectorArray) -> npt.NDArray[float]:
             potential[j] += mag
     return potential
 
-def constrain_particles(particles: VectorArray) -> None:
-    for i in range(len(particles)):
-        if particles[i,0] > L:
-            particles[i,0] = 2 * L - particles[i,0]
-        elif particles[i,0] < 0:
-            particles[i,0] *= -1
-        if particles[i,1] > L:
-            particles[i,1] = 2 * L - particles[i,1]
-        elif particles[i,1] < 0:
-            particles[i,1] *= -1
-
 def kinetic_energy(velocities: VectorArray):
     return 0.5 * np.sum(velocities ** 2)
 
@@ -107,9 +94,9 @@ def main():
     velocity_scale = 2 * v_0
     velocities = initialize_velocities(N, velocity_scale)
 
-    time_range = 50000
+    time_range = 25_000
     plot_freq = 5
-    dt = sigma/(velocity_scale) * 0.02
+    dt = sigma/(velocity_scale) * 0.001
     
     position_history = np.empty((time_range//plot_freq,N,2))
 
@@ -122,7 +109,12 @@ def main():
             E_p[t//plot_freq] = potential_energy(particles)
 
         particles, velocities = leapfrog(particles, velocities, lambda x: lennard_jones_force(x), dt = dt)
-        constrain_particles(particles)
+
+        # constrain particles to within box
+        particles[(particles[:,0] > L),0] = 2 * L - particles[(particles[:,0] > L),0]
+        particles[(particles[:,0] < 0),0] = - particles[(particles[:,0] < 0),0]
+        particles[(particles[:,1] > L),1] = 2 * L - particles[(particles[:,1] > L),1]
+        particles[(particles[:,1] < 0),1] = - particles[(particles[:,1] < 0),1]
     
     time = np.arange(time_range//plot_freq) * dt / t_0
     plt.subplot(3, 1, 1)

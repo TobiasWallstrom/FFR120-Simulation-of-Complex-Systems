@@ -4,7 +4,6 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib import pyplot as plt
 from tqdm import trange
-from matplotlib.ticker import StrMethodFormatter
 from typing import NewType, Callable, Tuple
 
 Vector = NewType('Vector', npt.NDArray[float])
@@ -12,7 +11,7 @@ Vector = NewType('Vector', npt.NDArray[float])
 def hooke_force(x: Vector, k: float):
     return -k * x
 
-def euler_step(pos: Vector, vel: Vector, acc: Vector, dt = 1.0) -> Tuple[Vector, Vector]:
+def euler(pos: Vector, vel: Vector, acc: Vector, dt = 1.0) -> Tuple[Vector, Vector]:
     return pos + vel * dt, vel + acc * dt
 
 def leapfrog(pos: Vector, vel: Vector, acc_func: Callable[[Vector], Vector], dt = 1.0) -> Tuple[Vector, Vector]:
@@ -27,7 +26,7 @@ def analytical_positions(t: Vector, magnitude: float, omega: float, phi=0):
     return magnitude * np.cos(omega * t + phi)
 
 # d/dt of positions
-def analytical_velocities(t: Vector, magnitude: float, omega: float, phi=0):
+def analytical_velocity(t: Vector, magnitude: float, omega: float, phi=0):
     return -omega * magnitude * np.sin(omega * t + phi)
 
 def potential_energy(k, x):
@@ -43,7 +42,7 @@ def main():
     m = 0.1
     k = 3.0
     dt_values = [0.0001, 0.002, 0.01]
-    start_pos = 0.1
+    start_pos = 0.2
     start_vel = 0.0
     start_acc = 0.0 # should not be changed unless you specifically want to add another force
 
@@ -68,11 +67,11 @@ def main():
             if use_leapfrog_alg:
                 position, velocity = leapfrog(position, velocity, lambda x: hooke_force(x, k) / m, dt=dt)
             else:
-                position, velocity = euler_step(position, velocity, hooke_force(position, k) / m, dt=dt)
+                position, velocity = euler(position, velocity, hooke_force(position, k) / m, dt=dt)
             
         times = np.arange(time_range) * dt
-        an_sol = analytical_positions(times, 0.1, np.sqrt(k/m))
-        an_vel = analytical_velocities(times, 0.1, np.sqrt(k/m))
+        an_sol = analytical_positions(times, start_pos, np.sqrt(k/m))
+        an_vel = analytical_velocity(times, start_pos, np.sqrt(k/m))
         an_energy = energy(an_sol, an_vel, k, m)
 
         plt.subplot(2, len(dt_values), plot+1)
@@ -87,6 +86,7 @@ def main():
         plt.plot(times, an_energy/an_energy[0]-1)
         plt.xlabel('$t$')
         plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+        plt.ylim(-5e-5, 8e-4)
         if plot % len(dt_values) == 0:
             plt.ylabel('Relative energy drift')
 
