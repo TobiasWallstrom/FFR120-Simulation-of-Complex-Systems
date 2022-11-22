@@ -6,15 +6,17 @@ from tqdm import trange
 
 if __name__ == '__main__':
     x_0 = 0
-    sigma = 1
+    sigma_0 = 1
+    ds = 0.9  # delta sigma
+    alpha = 0.5
 
     N = 10_000
-    T = 100_000
+    T = 10_000  # 100_000 # seconds
     L = 100
     dt = 0.01
 
     dt_red = np.sqrt(dt)
-    time_range = int(T / dt)
+    time_range = int(T/dt)
 
     x = np.zeros((N, 1))
     x[:, 0] = x_0
@@ -24,31 +26,32 @@ if __name__ == '__main__':
     UPR_BND = L / 2
 
     plot_colors = ['#590995', '#d22b2b', '#ffa500', '#0bda51', '#1434a4']
-    plot_times = (np.array([10, 100, 1_000, 10_000, 100_000]) / dt).astype(int)
+    plot_times = (np.array([10, 100, 1_000, 10_000, 100_000])/dt).astype(int)
     avgs = np.zeros(plot_times.shape)
     stds = np.zeros(plot_times.shape)
     idx = 0
 
     for t in trange(time_range):
-        diff = (np.round(np.random.rand(N, 1)) * 2 - 1) * sigma * dt_red
+        diff = alpha * (sigma_0 + ds * x / L) * (ds * dt / L) + (np.round(np.random.rand(N, 1)) * 2 - 1) * sigma_0 * dt_red
         x += diff
 
         x[(x < LWR_BND)] = - L - x[(x < LWR_BND)]
         x[(x > UPR_BND)] = L - x[(x > UPR_BND)]
 
-        if t + 1 in plot_times:
-            counts, bins = np.histogram(x[:], bins=BINS, range=(LWR_BND, UPR_BND))
+        if t+1 in plot_times:
+            counts, bins = np.histogram(
+                x[:], bins=BINS, range=(LWR_BND, UPR_BND))
             avgs[idx] = np.mean(x[:])
             stds[idx] = np.std(x[:]) / L
-            plt.stairs(counts, bins, fill=True, alpha=0.2, color=plot_colors[idx], label=f'$t={int((t+1)*dt)}$')
-            plt.stairs(counts, bins, color=plot_colors[idx])
+            plt.stairs(counts, bins, fill=True, alpha=0.2, color=plot_colors[i], label=f'$t={int((t+1)*dt)}$')
+            plt.stairs(counts, bins, color=plot_colors[i])
             idx += 1
 
     for i in range(idx):
         print(f't = {plot_times[i]}')
         print(f'  Avg:{avgs[i]} Std:{stds[i]}')
 
-    plt.xlabel('$x$')
+    plt.xlabel('$x_j$')
     plt.ylabel('Count')
     plt.legend()
     plt.grid()
