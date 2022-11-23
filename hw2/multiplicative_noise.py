@@ -31,7 +31,7 @@ if __name__ == '__main__':
     idx = 0
 
     for t in trange(time_range):
-        diff = (sigma_0 + ds * x / L) * np.random.randn(N, 1) * dt_red
+        diff = (sigma_0 + ds * x / L) * (np.round(np.random.rand(N, 1)) * 2 - 1) * dt_red
         x += diff
 
         x[(x < LWR_BND)] = - L - x[(x < LWR_BND)]

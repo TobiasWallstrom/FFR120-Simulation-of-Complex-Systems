@@ -19,7 +19,7 @@ if __name__ == '__main__':
     time_range = int(T/dt)
 
     x = np.zeros((N, 1))
-    x[:, 0] = x_0
+    x[:] = x_0
 
     BINS = 100
     LWR_BND = -L / 2
