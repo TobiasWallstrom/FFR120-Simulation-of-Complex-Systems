@@ -6,7 +6,7 @@ from tqdm import trange
 
 if __name__ == '__main__':
     x_0 = 0
-    sigma = 1
+    sigma_0 = 1
 
     N = 10_000
     T = 100_000
@@ -17,9 +17,9 @@ if __name__ == '__main__':
     time_range = int(T / dt)
 
     x = np.zeros((N, 1))
-    x[:, 0] = x_0
+    x[:] = x_0
 
-    BINS = 31
+    BINS = 100
     LWR_BND = -L / 2
     UPR_BND = L / 2
 
@@ -29,8 +29,10 @@ if __name__ == '__main__':
     stds = np.zeros(plot_times.shape)
     idx = 0
 
+    assert len(plot_colors) <= len(plot_times), 'Not enough plot colors, add more'
+
     for t in trange(time_range):
-        diff = (np.round(np.random.rand(N, 1)) * 2 - 1) * sigma * dt_red
+        diff = (np.round(np.random.rand(N, 1)) * 2 - 1) * sigma_0 * dt_red
         x += diff
 
         x[(x < LWR_BND)] = - L - x[(x < LWR_BND)]
