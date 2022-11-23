@@ -42,7 +42,7 @@ if __name__ == '__main__':
             counts, bins = np.histogram(x[:], bins=BINS, range=(LWR_BND, UPR_BND))
             avgs[idx] = np.mean(x[:])
             stds[idx] = np.std(x[:]) / L
-            plt.stairs(counts, bins, fill=True, alpha=0.2, color=plot_colors[idx], label=f'$t={int((t+1)*dt)}$')
+            plt.stairs(counts, bins, fill=True, alpha=0.2, color=plot_colors[idx], label=f'$t={int((t + 1) * dt)}$ s')
             plt.stairs(counts, bins, color=plot_colors[idx])
             idx += 1
 
@@ -50,6 +50,7 @@ if __name__ == '__main__':
         print(f't = {plot_times[i]}')
         print(f'  Avg:{avgs[i]} Std:{stds[i]}')
 
+    plt.title('Diffusion in box')
     plt.xlabel('$x$')
     plt.ylabel('Count')
     plt.legend()

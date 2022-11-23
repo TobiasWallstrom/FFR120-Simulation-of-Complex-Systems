@@ -11,12 +11,12 @@ if __name__ == '__main__':
     alpha = 0.5
 
     N = 10_000
-    T = 100_000  # 100_000 # seconds
+    T = 100_000  # seconds
     L = 100
     dt = 0.01
 
     dt_red = np.sqrt(dt)
-    time_range = int(T/dt)
+    time_range = int(T / dt)
 
     x = np.zeros((N, 1))
     x[:] = x_0
@@ -26,10 +26,12 @@ if __name__ == '__main__':
     UPR_BND = L / 2
 
     plot_colors = ['#590995', '#d22b2b', '#ffa500', '#0bda51', '#1434a4']
-    plot_times = (np.array([10, 100, 1_000, 10_000, 100_000])/dt).astype(int)
+    plot_times = (np.array([10, 100, 1_000, 10_000, 100_000]) / dt).astype(int)
     avgs = np.zeros(plot_times.shape)
     stds = np.zeros(plot_times.shape)
     idx = 0
+
+    assert len(plot_colors) <= len(plot_times), 'Not enough plot colors, add more'
 
     for t in trange(time_range):
         diff = alpha * (sigma_0 + ds * x / L) * (ds * dt / L) + (np.round(np.random.rand(N, 1)) * 2 - 1) * (sigma_0 + ds * x / L) * dt_red
@@ -42,7 +44,7 @@ if __name__ == '__main__':
             counts, bins = np.histogram(x[:], bins=BINS, range=(LWR_BND, UPR_BND))
             avgs[idx] = np.mean(x[:])
             stds[idx] = np.std(x[:]) / L
-            plt.stairs(counts, bins, fill=True, alpha=0.2, color=plot_colors[idx], label=f'$t={int((t + 1) * dt)}$')
+            plt.stairs(counts, bins, fill=True, alpha=0.2, color=plot_colors[idx], label=f'$t={int((t + 1) * dt)}$ s')
             plt.stairs(counts, bins, color=plot_colors[idx])
             idx += 1
 
@@ -55,7 +57,7 @@ if __name__ == '__main__':
     elif alpha == 1:
         plt.title('Anti-Itô')
 
-    plt.xlabel('$x_j$')
+    plt.xlabel('$x$')
     plt.ylabel('Count')
     plt.legend()
     plt.grid()
