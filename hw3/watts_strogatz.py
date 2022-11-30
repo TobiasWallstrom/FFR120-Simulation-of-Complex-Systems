@@ -10,7 +10,7 @@ def gen_matrix(n: int, c: int, p: float):
     A = np.zeros((n, n))
     for i in range(n):
         for j in range(i + 1, n):
-            dx = j - i
+            dx = j - i  # |i - j|, but j > i always in this loop
 
             dx = n - dx if dx > n / 2 else dx
 
@@ -23,13 +23,15 @@ def gen_matrix(n: int, c: int, p: float):
 
 
 if __name__ == '__main__':
-    A = gen_matrix(10, 4, 0.2)
+    i = 0
+    for n, c, p in [(20, 2, 0), (20, 4, 0), (20, 8, 0), (20, 2, 0.2), (20, 4, 0.2), (20, 8, 0.2)]:
+        A = gen_matrix(n, c, p)
 
-    G = nx.from_numpy_array(A)
-    # plt.subplot(2, 3, i)
+        G = nx.from_numpy_array(A)
+        plt.subplot(2, 3, i + 1)
 
-    # plt.title(f"$n$: {n}, $p$: {p}")
-    pos = nx.circular_layout(G)
-    nx.draw(G, pos=pos, node_size=30)
+        plt.title(f"$n$: {n}, $c$: {c}, $p$: {p}")
+        nx.draw(G, pos=nx.circular_layout(G), node_size=30)
+        i += 1
 
     plt.show()
