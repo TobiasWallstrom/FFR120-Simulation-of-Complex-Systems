@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import numpy as np
 import networkx as nx
@@ -11,7 +11,6 @@ def gen_matrix(n: int, c: int, p: float):
     for i in range(n):
         for j in range(i + 1, n):
             dx = j - i  # |i - j|, but j > i always in this loop
-
             dx = n - dx if dx > n / 2 else dx
 
             if dx % n <= c / 2:
@@ -30,7 +29,7 @@ if __name__ == '__main__':
         G = nx.from_numpy_array(A)
         plt.subplot(2, 3, i + 1)
 
-        plt.title(f"$n$: {n}, $c$: {c}, $p$: {p}")
+        plt.title(f'$n$: {n}, $c$: {c}, $p$: {p}')
         nx.draw(G, pos=nx.circular_layout(G), node_size=30)
         i += 1
 
