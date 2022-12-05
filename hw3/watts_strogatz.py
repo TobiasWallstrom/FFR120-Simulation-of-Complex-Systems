@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 import numpy as np
+import numpy.typing as npt
 import networkx as nx
 
 from matplotlib import pyplot as plt
 
 
-def gen_matrix(n: int, c: int, p: float):
+# This one incorrectly adds and removes connections, there are too many connections for a given c
+def gen_matrix(n: int, c: int, p: float) -> npt.NDArray[int]:
     A = np.zeros((n, n))
     for i in range(n):
         for j in range(i + 1, n):
