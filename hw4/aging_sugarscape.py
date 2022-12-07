@@ -64,7 +64,7 @@ def generate_agents(num_agents: int) -> npt.NDArray[Agent]:
 def regenerate_agent(agents: npt.NDArray[Agent], N: int) -> None:
     reborn_agents = np.argwhere(agents[:, 5] == 0).flatten()
 
-    for agent in reborn_agents:
+    for agent in reborn_agents:  # do an index replacement of each agent to be reborn
         agents[agent, 2] = np.random.randint(5, 26)
         agents[agent, 3] = np.random.randint(1, 7)
         agents[agent, 4] = np.random.randint(1, 5)
@@ -134,8 +134,7 @@ def main():
             timestamps.append(f'${t = }$')
 
         for i in agent_order:
-            if not agents[i, 5]:
-                continue
+            # no check if dead here since all were regenerated at the end of last round
 
             j = int(agents[i, 0])
             k = int(agents[i, 1])
