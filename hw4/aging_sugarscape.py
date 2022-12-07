@@ -270,11 +270,11 @@ def main():
     plt.plot(np.arange(agents.shape[0])/agents.shape[0], wealth_lorenz)
 
     plt.figure(5)
-    plt.suptitle('Gini coefficient per round')
+    plt.suptitle('Gini coefficient per round, aging')
     plt.plot(np.arange(1, num_rounds + 1), gini_coeffs)
 
     plt.figure(6)
-    plt.suptitle('Lorenz curve at different rounds')
+    plt.suptitle('Lorenz curve at different rounds, aging')
     plt.plot([0, 1], [0, 1], color='k')
     for curve in lorenz_curves:
         plt.plot(np.arange(agents.shape[0])/agents.shape[0], curve)

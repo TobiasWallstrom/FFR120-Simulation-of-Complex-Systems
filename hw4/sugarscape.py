@@ -256,7 +256,7 @@ def main():
     plt.plot(np.arange(1, num_rounds + 1), all_gini_coeffs)
 
     plt.figure(6)
-    plt.suptitle('Lorenz curve at different rounds')
+    plt.suptitle('Lorenz curve at different rounds, non-aging')
     plt.subplot(1, 2, 1)
     plt.title('Alive agents')
     plt.plot([0, 1], [0, 1], color='k')
