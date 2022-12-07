@@ -20,6 +20,10 @@ def gini(x):
     return g
 
 
+def lorenz(wealth: npt.NDArray[int]):
+    return np.cumsum(np.sort(wealth))/np.sum(wealth)
+
+
 def place_sugar(grid: Grid, row: int, col: int, radius: float) -> None:
     # no idea in checking values guaranteed outside the radius
     # use min and max to avoid index out of bounds
@@ -92,12 +96,17 @@ def main():
     wealth_bins = []
     timestamps = []
 
-    print(f'Initial Gini coefficient = {gini(agents[:,2])}')
+    all_gini_coeffs = np.zeros(num_rounds)
+    alive_gini_coeffs = np.zeros(num_rounds)
+    lorenz_curves = [lorenz(agents[:, 2])]
+    alive_lorenz_curves = [lorenz(agents[:, 2])]
+    lorenz_times = [0, 125, 250, 375, 500]
+
     plt.figure(4)
     plt.suptitle('Lorenz plot')
     plt.subplot(1, 2, 1)
     plt.title('Initial')
-    wealth_lorenz = np.cumsum(np.sort(agents[:, 2]))/np.sum(agents[:, 2])
+    wealth_lorenz = lorenz(agents[:, 2])
     plt.plot([0, 1], [0, 1], color='k')
     plt.plot(np.arange(num_agents)/num_agents, wealth_lorenz)
 
@@ -110,6 +119,11 @@ def main():
             wealth_hists.append(s_hist)
             wealth_bins.append(s_bins)
             timestamps.append(f'${t = }$')
+
+        if t + 1 in lorenz_times:
+            alive_agents = agents[agents[:, 5] > 0]
+            lorenz_curves.append(lorenz(agents[:, 2]))
+            alive_lorenz_curves.append(lorenz(alive_agents))
 
         for i in agent_order:
             if not agents[i, 5]:
@@ -190,6 +204,9 @@ def main():
         sugar_grid += regrowth_constant
         sugar_grid = np.minimum(sugar_grid, max_capacity)
 
+        all_gini_coeffs[t] = gini(agents[2])
+        alive_gini_coeffs[t] = gini(alive_agents[2])
+
     alive_agents = agents[agents[:, 5] > 0]
 
     print(alive_agents.shape[0])
@@ -221,14 +238,36 @@ def main():
     plt.ylabel('Number of agents')
     plt.legend()
 
-    print(f'Final Gini coefficient = {gini(alive_agents[:,2])}')
     plt.figure(4)
     plt.suptitle('Gini coefficient, non-aging')
     plt.subplot(1, 2, 2)
     plt.title('Final')
-    wealth_lorenz = np.cumsum(np.sort(alive_agents[:, 2]))/np.sum(alive_agents[:, 2])
+    wealth_lorenz = lorenz(agents[:, 2])
     plt.plot([0, 1], [0, 1], color='k')
-    plt.plot(np.arange(alive_agents.shape[0])/alive_agents.shape[0], wealth_lorenz)
+    plt.plot(np.arange(wealth_lorenz.shape[0])/wealth_lorenz.shape[0], wealth_lorenz)
+
+    plt.figure(5)
+    plt.suptitle('Gini coefficient per round, non-aging')
+    plt.subplot(1, 2, 1)
+    plt.title('Alive agents')
+    plt.plot(np.arange(1, num_rounds + 1), alive_gini_coeffs)
+    plt.subplot(1, 2, 2)
+    plt.title('All agents')
+    plt.plot(np.arange(1, num_rounds + 1), all_gini_coeffs)
+
+    plt.figure(6)
+    plt.suptitle('Lorenz curve at different rounds')
+    plt.subplot(1, 2, 1)
+    plt.title('Alive agents')
+    plt.plot([0, 1], [0, 1], color='k')
+    for curve in alive_lorenz_curves:
+        plt.plot(np.arange(curve.shape[0])/curve.shape[0], lorenz(curve))
+    plt.subplot(1, 2, 2)
+    plt.title('All agents')
+    plt.plot([0, 1], [0, 1], color='k')
+    for curve in lorenz_curves:
+        plt.plot(np.arange(agents.shape[0])/agents.shape[0], curve)
+    plt.legend(lorenz_times)
 
     plt.show()
 

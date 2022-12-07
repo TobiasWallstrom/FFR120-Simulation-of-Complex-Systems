@@ -20,6 +20,10 @@ def gini(x):
     return g
 
 
+def lorenz(wealth: npt.NDArray[int]):
+    return np.cumsum(np.sort(wealth))/np.sum(wealth)
+
+
 def place_sugar(grid: Grid, row: int, col: int, radius: float) -> None:
     # no idea in checking values guaranteed outside the radius
     # use min and max to avoid index out of bounds
@@ -112,12 +116,14 @@ def main():
     wealth_bins = []
     timestamps = []
 
-    print(f'Initial Gini coefficient = {gini(agents[:,2])}')
+    gini_coeffs = np.zeros(num_rounds)
+    lorenz_curves = [lorenz(agents[:, 2])]
+    lorenz_times = [0, 125, 250, 375, 500]
+
     plt.figure(4)
-    plt.suptitle('Lorenz plot')
     plt.subplot(1, 2, 1)
     plt.title('Initial')
-    wealth_lorenz = np.cumsum(np.sort(agents[:, 2]))/np.sum(agents[:, 2])
+    wealth_lorenz = lorenz(agents[:, 2])
     plt.plot([0, 1], [0, 1], color='k')
     plt.plot(np.arange(num_agents)/num_agents, wealth_lorenz)
 
@@ -132,6 +138,9 @@ def main():
             wealth_hists.append(s_hist)
             wealth_bins.append(s_bins)
             timestamps.append(f'${t = }$')
+
+        if t + 1 in lorenz_times:
+            lorenz_curves.append(lorenz(agents[:, 2]))
 
         for i in agent_order:
             # no check if dead here since all were regenerated at the end of last round
@@ -213,6 +222,7 @@ def main():
         # Age agent and kill if too old
         agents[:, 6] += 1
         agents[agents[:, 6] >= agents[:, 7], 5] = 0
+        gini_coeffs[t] = gini(agents[2])
         if t == num_rounds - 1:  # regenerate unless final generation
             break
         regenerate_agent(agents, N)
@@ -251,14 +261,24 @@ def main():
     plt.ylabel('Number of agents')
     plt.legend()
 
-    print(f'Final Gini coefficient = {gini(agents[:,2])}')
     plt.figure(4)
     plt.suptitle('Gini coefficient, aging')
     plt.subplot(1, 2, 2)
     plt.title('Final')
-    wealth_lorenz = np.cumsum(np.sort(agents[:, 2]))/np.sum(agents[:, 2])
+    wealth_lorenz = lorenz(agents[:, 2])
     plt.plot([0, 1], [0, 1], color='k')
     plt.plot(np.arange(agents.shape[0])/agents.shape[0], wealth_lorenz)
+
+    plt.figure(5)
+    plt.suptitle('Gini coefficient per round')
+    plt.plot(np.arange(1, num_rounds + 1), gini_coeffs)
+
+    plt.figure(6)
+    plt.suptitle('Lorenz curve at different rounds')
+    plt.plot([0, 1], [0, 1], color='k')
+    for curve in lorenz_curves:
+        plt.plot(np.arange(agents.shape[0])/agents.shape[0], curve)
+    plt.legend(lorenz_times)
 
     plt.show()
 
