@@ -13,9 +13,7 @@ Grid = NewType('Grid', npt.NDArray[npt.NDArray[int]])
 
 def gini(x):
     mad = np.abs(np.subtract.outer(x, x)).mean()
-    # Relative mean absolute difference
     rmad = mad/np.mean(x)
-    # Gini coefficient
     g = 0.5 * rmad
     return g
 
@@ -60,7 +58,7 @@ def generate_agents(num_agents: int) -> npt.NDArray[Agent]:
     agents[:, 4] = np.random.randint(1, 5, num_agents)
     agents[:, 5] = np.ones(num_agents)
     agents[:, 6] = np.zeros(num_agents)
-    agents[:, 7] = np.random.randint(60, 100, num_agents)
+    agents[:, 7] = np.random.randint(60, 101, num_agents)
 
     return agents
 
@@ -113,7 +111,6 @@ def main():
     plt.xlabel('Metabolism')
 
     wealth_hists = []
-    wealth_bins = []
     timestamps = []
 
     gini_coeffs = np.zeros(num_rounds)
@@ -134,9 +131,8 @@ def main():
 
         if t % 20 == 0 and t < 80:  # get t = 20, t = 40, t = 60, and t = 80
             alive_agents = agents[agents[:, 5] > 0]
-            s_hist, s_bins = np.histogram(alive_agents[:, 2], bins=15)
+            s_hist, _ = np.histogram(alive_agents[:, 2], bins=15)
             wealth_hists.append(s_hist)
-            wealth_bins.append(s_bins)
             timestamps.append(f'${t = }$')
 
         if t + 1 in lorenz_times:
@@ -254,9 +250,7 @@ def main():
 
     plt.figure(3)
     plt.suptitle('Wealth distribution, aging')
-    wealth_index = wealth_bins[-1:].index(max(wealth_bins[-1:]))
-    s_bins = wealth_bins[wealth_index]
-    plt.hist(wealth_hists, s_bins, label=timestamps, alpha=0.8, density=True, histtype='bar')
+    plt.hist(wealth_hists, 25, label=timestamps, alpha=0.8, density=True, histtype='bar')
     plt.xlabel('Wealth')
     plt.ylabel('Number of agents')
     plt.legend()

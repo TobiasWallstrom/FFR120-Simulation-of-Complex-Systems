@@ -93,7 +93,6 @@ def main():
     plt.xlabel('Metabolism')
 
     wealth_hists = []
-    wealth_bins = []
     timestamps = []
 
     all_gini_coeffs = np.zeros(num_rounds)
@@ -115,9 +114,8 @@ def main():
 
         if t % 20 == 0 and t < 80:  # get t = 20, t = 40, t = 60, and t = 80
             alive_agents = agents[agents[:, 5] > 0]
-            s_hist, s_bins = np.histogram(alive_agents[:, 2], bins=15)
+            s_hist, _ = np.histogram(agents[:, 2], bins=15)
             wealth_hists.append(s_hist)
-            wealth_bins.append(s_bins)
             timestamps.append(f'${t = }$')
 
         if t + 1 in lorenz_times:
@@ -231,9 +229,8 @@ def main():
 
     plt.figure(3)
     plt.suptitle('Wealth distribution, non-aging')
-    wealth_index = wealth_bins[-1:].index(max(wealth_bins[-1:]))
-    s_bins = wealth_bins[wealth_index]
-    plt.hist(wealth_hists, s_bins, label=timestamps, alpha=0.8, density=True, histtype='bar')
+    plt.hist(wealth_hists, 25, label=timestamps, alpha=0.8, density=True, histtype='bar')
+
     plt.xlabel('Wealth')
     plt.ylabel('Number of agents')
     plt.legend()
